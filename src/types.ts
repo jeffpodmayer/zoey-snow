@@ -1,9 +1,12 @@
 export interface WeatherData {
   station: string;
-  temperature?: number;
-  windSpeed?: number;
-  windGust?: number;
-  windDirection?: string;
+  temperature?: number; // °F
+  highTemp?: number; // °F (24h high)
+  lowTemp?: number; // °F (24h low)
+  windSpeed?: number; // mph
+  windGust?: number; // mph
+  windDirection?: string; // Cardinal (N, NE, …)
+  windDirectionDegrees?: number; // Degrees (0–360)
 }
 
 export interface ObservationValue {
@@ -12,11 +15,8 @@ export interface ObservationValue {
 }
 
 export interface SynopticStation {
-  ID?: string;
   STID: string;
   NAME: string;
-  ELEVATION?: string;
-  STATUS?: string;
   OBSERVATIONS: {
     air_temp_value_1?: ObservationValue;
     air_temp_high_24_hour_value_1?: ObservationValue;
@@ -24,18 +24,15 @@ export interface SynopticStation {
     wind_speed_value_1?: ObservationValue;
     wind_gust_value_1?: ObservationValue;
     wind_direction_value_1?: ObservationValue;
-    wind_cardinal_direction_value_1d?: ObservationValue; // Already in cardinal format!
-    [key: string]: ObservationValue | undefined; // Allow other fields
+    wind_cardinal_direction_value_1d?: ObservationValue;
+    [key: string]: ObservationValue | undefined;
   };
 }
 
 export interface SynopticApiResponse {
   STATION?: SynopticStation[];
   SUMMARY: {
-    NUMBER_OF_OBJECTS?: number;
-    RESPONSE_CODE: number; // 1 = success, 2+ = error
+    RESPONSE_CODE: number;
     RESPONSE_MESSAGE?: string;
-    RESPONSE_TIME?: number;
-    VERSION?: string;
   };
 }

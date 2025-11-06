@@ -42,19 +42,19 @@ Node.js 18+ | TypeScript | Zod | Google Sheets API | GitHub Actions | dotenv
   - [x] Create `.gitignore` (exclude `.env`, `credentials.json`, `node_modules/`)
   - [x] Create `.env.example` template
 
-- [ ] **Synoptic API - Single Station**
+- [x] **Synoptic API - Single Station**
 
-  - [ ] Implement fetch for Methow Valley station
-  - [ ] Parse response, extract key fields
-  - [ ] Log results to console
-  - [ ] Add basic error handling
+  - [x] Implement fetch for Methow Valley station
+  - [x] Parse response, extract key fields
+  - [x] Log results to console
+  - [x] Add basic error handling
 
-- [ ] **Validate**
-  - [ ] Test with real API token
+- [x] **Validate**
+  - [x] Test with real API token
   - [x] Verify TypeScript compilation
-  - [ ] Confirm data format matches expectations
+  - [x] Confirm data format matches expectations
 
-**Success**: Can run `npm run fetch` and see weather data in console
+**Success**: ✅ Can run `npm run fetch` and see weather data in console - **COMPLETE!**
 
 ---
 
