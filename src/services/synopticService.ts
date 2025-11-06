@@ -37,6 +37,7 @@ function formatStation(station: SynopticStation): WeatherData {
   const lowTemp = toValue(obs.air_temp_low_24_hour_value_1);
   const windSpeed = toValue(obs.wind_speed_value_1);
   const windGust = toValue(obs.wind_gust_value_1);
+  const windGustTimestamp = obs.wind_gust_value_1?.date_time; // Add this
   const windDirCardinal = obs.wind_cardinal_direction_value_1d?.value;
   const windDirDegrees = toValue(obs.wind_direction_value_1);
 
@@ -47,6 +48,7 @@ function formatStation(station: SynopticStation): WeatherData {
     lowTemp: lowTemp !== undefined ? cToF(lowTemp) : undefined,
     windSpeed: windSpeed !== undefined ? msToMph(windSpeed) : undefined,
     windGust: windGust !== undefined ? msToMph(windGust) : undefined,
+    windGustTimestamp: windGustTimestamp, // Add this
     windDirection:
       typeof windDirCardinal === "string" ? windDirCardinal : undefined,
     windDirectionDegrees: windDirDegrees,
