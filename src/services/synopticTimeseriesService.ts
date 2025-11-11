@@ -43,8 +43,6 @@ export async function fetchDailyTimeseries(
 
     const json = (await res.json()) as TimeseriesResponse;
 
-    console.log("DEBUG timeseries response:", JSON.stringify(json, null, 2)); // Add debug logging
-
     const station = json.STATION?.[0];
 
     if (!station?.OBSERVATIONS) return null;

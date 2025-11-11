@@ -45,14 +45,14 @@ export async function ensureHeaders(auth: JWT, spreadsheetId: string) {
     const headers = [
       "Date",
       "Station",
-      "Current Temperature",
-      "24-Hour High Temperature",
-      "24-Hour Low Temperature",
-      "Average Wind Speed",
-      "Peak Wind Speed",
+      "Current Temperature (°F)",
+      "24-Hour High Temperature (°F)",
+      "24-Hour Low Temperature (°F)",
+      "Average Wind Speed (mph)",
+      "Peak Wind Speed (mph)",
       "Wind Direction (Cardinal)",
-      "Precipitation (midnight-midnight)",
-      "SWE Change (midnight-midnight)",
+      "Precipitation (in)",
+      "SWE Change (in)",
       "Notes",
     ];
 

@@ -2,25 +2,25 @@ import { WeatherData } from "../types";
 
 /**
  * Formats a number value for spreadsheet output.
- * Returns the formatted number or "N/A" if undefined.
+ * Returns the formatted number or "-" if undefined.
  */
 export function formatNumber(
   value: number | undefined,
   decimals: number = 1
 ): string {
-  return value !== undefined ? value.toFixed(decimals) : "N/A";
+  return value !== undefined ? value.toFixed(decimals) : "-";
 }
 
 /**
  * Formats a string value for spreadsheet output.
- * Returns the string or "N/A" if undefined/empty.
+ * Returns the string or "-" if undefined/empty.
  */
 export function formatString(value: string | undefined): string {
-  return value && value.trim() !== "" ? value : "N/A";
+  return value && value.trim() !== "" ? value : "-";
 }
 
 /**
- * Converts WeatherData to a spreadsheet row with N/A for missing values.
+ * Converts WeatherData to a spreadsheet row with "-" for missing values.
  *
  * Column order:
  * 1. Date

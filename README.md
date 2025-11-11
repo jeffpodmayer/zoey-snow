@@ -126,8 +126,11 @@ Some stations do not report every value; when that happens the cell shows "N/A" 
 
 - Create a new Google Sheet
 - Copy the Sheet ID from the URL: https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit
-- Click "Share" and add the service account email (found in credentials.json as client_email)
+- Open your credentials.json file and find the "client_email" field (it will look like: weather-tracker@your-project.iam.gserviceaccount.com)
+- In your Google Sheet, click "Share"
+- Paste the service account email address
 - Give it "Editor" permissions
+- Click "Send" (you can ignore the warning about sending invites to non-Gmail addresses)
 
 **Step 6: Update .env**
 

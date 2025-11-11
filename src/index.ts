@@ -22,17 +22,32 @@ async function run() {
 
   console.log(`\n📅 Fetching data for: ${dateStr} (UTC)\n`);
 
-  // Fetch KS52 data
+  // Fetch KS52 data (Methow Valley AWOS)
   const metData = await fetchDailyTimeseries("KS52", startUtc, endUtc);
   const metPrecip = await fetchDailyPrecipInches("KS52", startUtc, endUtc);
 
-  // Fetch HRPW1 data
-  const snotelPrecip = await fetchDailyPrecipInches("HRPW1", startUtc, endUtc);
-  const snotelSwe = await fetchSweTimeseries("HRPW1", startUtc, endUtc);
+  // Fetch WAP55 data (Washington Pass AWOS)
+  const wapData = await fetchDailyTimeseries("WAP55", startUtc, endUtc);
+  const wapPrecip = await fetchDailyPrecipInches("WAP55", startUtc, endUtc);
+
+  // Fetch HRPW1 data (Harts Pass SNOTEL)
+  const hrpData = await fetchDailyTimeseries("HRPW1", startUtc, endUtc);
+  const hrpPrecip = await fetchDailyPrecipInches("HRPW1", startUtc, endUtc);
+  const hrpSwe = await fetchSweTimeseries("HRPW1", startUtc, endUtc);
+
+  // Fetch RAIW1 data (Rainy Pass SNOTEL)
+  const raiData = await fetchDailyTimeseries("RAIW1", startUtc, endUtc);
+  const raiPrecip = await fetchDailyPrecipInches("RAIW1", startUtc, endUtc);
+  const raiSwe = await fetchSweTimeseries("RAIW1", startUtc, endUtc);
+
+  // Fetch SWSW1 data (Swamp Creek SNOTEL)
+  const swsData = await fetchDailyTimeseries("SWSW1", startUtc, endUtc);
+  const swsPrecip = await fetchDailyPrecipInches("SWSW1", startUtc, endUtc);
+  const swsSwe = await fetchSweTimeseries("SWSW1", startUtc, endUtc);
 
   // Prepare KS52 row data
   const ks52RowData = {
-    station: metData?.station,
+    station: "Methow Valley (AWOS)",
     temperature: metData?.temperature,
     highTemp: metData?.highTemp,
     lowTemp: metData?.lowTemp,
@@ -40,20 +55,59 @@ async function run() {
     windGust: metData?.windGust,
     windDirection: metData?.windDirection,
     precipitationInches: metPrecip?.inches,
-    sweDeltaInches: undefined, // KS52 doesn't report SWE
+    sweDeltaInches: undefined,
+  };
+
+  // Prepare WAP55 row data
+  const wap55RowData = {
+    station: "Washington Pass (AWOS)",
+    temperature: wapData?.temperature,
+    highTemp: wapData?.highTemp,
+    lowTemp: wapData?.lowTemp,
+    windSpeed: wapData?.windSpeed,
+    windGust: wapData?.windGust,
+    windDirection: wapData?.windDirection,
+    precipitationInches: wapPrecip?.inches,
+    sweDeltaInches: undefined,
   };
 
   // Prepare HRPW1 row data
   const hrpw1RowData = {
-    station: "HRPW1",
-    temperature: undefined, // SNOTEL doesn't report temp
-    highTemp: undefined,
-    lowTemp: undefined,
-    windSpeed: undefined, // SNOTEL doesn't report wind
-    windGust: undefined,
-    windDirection: undefined,
-    precipitationInches: snotelPrecip?.inches,
-    sweDeltaInches: snotelSwe?.deltaInches,
+    station: "Harts Pass (SNOTEL)",
+    temperature: hrpData?.temperature,
+    highTemp: hrpData?.highTemp,
+    lowTemp: hrpData?.lowTemp,
+    windSpeed: hrpData?.windSpeed, // might be undefined if no wind sensor
+    windGust: hrpData?.windGust, // might be undefined
+    windDirection: hrpData?.windDirection, // might be undefined
+    precipitationInches: hrpPrecip?.inches,
+    sweDeltaInches: hrpSwe?.deltaInches,
+  };
+
+  // Prepare RAIW1 row data
+  const raiw1RowData = {
+    station: "Rainy Pass (SNOTEL)",
+    temperature: raiData?.temperature,
+    highTemp: raiData?.highTemp,
+    lowTemp: raiData?.lowTemp,
+    windSpeed: raiData?.windSpeed,
+    windGust: raiData?.windGust,
+    windDirection: raiData?.windDirection,
+    precipitationInches: raiPrecip?.inches,
+    sweDeltaInches: raiSwe?.deltaInches,
+  };
+
+  // Prepare SWSW1 row data
+  const swsw1RowData = {
+    station: "Swamp Creek (SNOTEL)",
+    temperature: swsData?.temperature,
+    highTemp: swsData?.highTemp,
+    lowTemp: swsData?.lowTemp,
+    windSpeed: swsData?.windSpeed,
+    windGust: swsData?.windGust,
+    windDirection: swsData?.windDirection,
+    precipitationInches: swsPrecip?.inches,
+    sweDeltaInches: swsSwe?.deltaInches,
   };
 
   // Convert to spreadsheet rows
@@ -62,33 +116,18 @@ async function run() {
     ks52RowData,
     metData ? "" : "Station offline or no data"
   );
-  const hrpw1Row = weatherDataToRow(dateStr, hrpw1RowData, "");
-
-  // Display formatted output
-  console.log("=== KS52 (Methow Valley) ===");
-  console.log(
-    "   Temperature (last):",
-    formatNumber(metData?.temperature, 1),
-    "°F"
+  const wap55Row = weatherDataToRow(
+    dateStr,
+    wap55RowData,
+    wapData ? "" : "Station offline or no data"
   );
-  console.log("   High:", formatNumber(metData?.highTemp, 1), "°F");
-  console.log("   Low:", formatNumber(metData?.lowTemp, 1), "°F");
-  console.log("   Avg Wind:", formatNumber(metData?.windSpeed, 1), "mph");
-  console.log("   Peak Wind:", formatNumber(metData?.windGust, 1), "mph");
-  console.log("   Wind Dir:", formatString(metData?.windDirection));
-  console.log("   Precipitation:", formatNumber(metPrecip?.inches, 2), "in");
-
-  console.log("\n=== HRPW1 (Harts Pass SNOTEL) ===");
-  console.log("   Precipitation:", formatNumber(snotelPrecip?.inches, 2), "in");
-  console.log("   SWE Change:", formatNumber(snotelSwe?.deltaInches, 2), "in");
-
-  console.log("\n=== Spreadsheet Rows (Ready for Google Sheets) ===");
-  console.log("KS52:", ks52Row);
-  console.log("HRPW1:", hrpw1Row);
+  const hrpw1Row = weatherDataToRow(dateStr, hrpw1RowData, "");
+  const raiw1Row = weatherDataToRow(dateStr, raiw1RowData, "");
+  const swsw1Row = weatherDataToRow(dateStr, swsw1RowData, "");
 
   // Write to Google Sheets
   console.log("\n📊 Writing to Google Sheets...");
-  await writeToSheet([ks52Row, hrpw1Row]);
+  await writeToSheet([ks52Row, wap55Row, hrpw1Row, raiw1Row, swsw1Row]);
   console.log("\n✅ Done!");
 }
 
