@@ -72,12 +72,19 @@ export async function ensureHeaders(auth: JWT, spreadsheetId: string) {
 /**
  * Appends rows to the sheet
  */
+/**
+ * Appends rows to the sheet and returns the starting row number
+ */
 export async function appendRows(
   auth: JWT,
   spreadsheetId: string,
   rows: string[][]
-) {
+): Promise<number> {
   const sheets = google.sheets({ version: "v4", auth });
+
+  // Get current row count before appending
+  const currentRowCount = await getRowCount(auth, spreadsheetId);
+  const startRow = currentRowCount + 1;
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId,
@@ -91,6 +98,8 @@ export async function appendRows(
 
   const updatedRows = response.data.updates?.updatedRows || 0;
   console.log(`✅ Appended ${updatedRows} row(s) to spreadsheet`);
+
+  return startRow;
 }
 
 /**
@@ -106,9 +115,81 @@ export async function writeToSheet(rows: string[][]) {
   try {
     const auth = await authenticate();
     await ensureHeaders(auth, spreadsheetId);
-    await appendRows(auth, spreadsheetId, rows);
+    const startRow = await appendRows(auth, spreadsheetId, rows);
+    await applyAlternatingDayColors(auth, spreadsheetId, startRow, rows.length);
   } catch (error) {
     console.error("❌ Error writing to Google Sheets:", error);
     throw error;
   }
+}
+
+/**
+ * Gets the current number of rows in the sheet
+ */
+async function getRowCount(auth: JWT, spreadsheetId: string): Promise<number> {
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "A:A", // Just check column A
+  });
+
+  return response.data.values?.length || 1; // At least header row
+}
+
+/**
+ * Applies alternating gray background to groups of 6 rows
+ * Every other day (6 rows) gets a light gray background
+ */
+async function applyAlternatingDayColors(
+  auth: JWT,
+  spreadsheetId: string,
+  startRow: number,
+  numRows: number
+) {
+  const sheets = google.sheets({ version: "v4", auth });
+
+  // Determine if this day should be gray
+  // Days starting at row 2, 14, 26, 38... are white (day 0, 2, 4...)
+  // Days starting at row 8, 20, 32, 44... are gray (day 1, 3, 5...)
+  const dayNumber = Math.floor((startRow - 2) / 6);
+  const shouldBeGray = dayNumber % 2 === 1;
+
+  // Determine color: gray or white
+  const backgroundColor = shouldBeGray
+    ? { red: 0.95, green: 0.95, blue: 0.95 } // Light gray
+    : { red: 1.0, green: 1.0, blue: 1.0 }; // White
+
+  // Apply the background color
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          repeatCell: {
+            range: {
+              sheetId: 0, // First sheet
+              startRowIndex: startRow - 1, // 0-indexed
+              endRowIndex: startRow - 1 + numRows,
+              startColumnIndex: 0, // Column A
+              endColumnIndex: 11, // Column K
+            },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: backgroundColor,
+              },
+            },
+            fields: "userEnteredFormat.backgroundColor",
+          },
+        },
+      ],
+    },
+  });
+
+  const colorName = shouldBeGray ? "gray" : "white";
+  console.log(
+    `✅ Applied ${colorName} background to rows ${startRow}-${
+      startRow + numRows - 1
+    }`
+  );
 }
