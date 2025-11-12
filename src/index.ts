@@ -26,9 +26,13 @@ async function run() {
   const metData = await fetchDailyTimeseries("KS52", startUtc, endUtc);
   const metPrecip = await fetchDailyPrecipInches("KS52", startUtc, endUtc);
 
-  // Fetch WAP55 data (Washington Pass AWOS)
+  // Fetch WAP55 data (WA Pass Lower AWOS)
   const wapData = await fetchDailyTimeseries("WAP55", startUtc, endUtc);
   const wapPrecip = await fetchDailyPrecipInches("WAP55", startUtc, endUtc);
+
+  // Fetch WAP67 data (WA Pass Upper AWOS)
+  const wap67Data = await fetchDailyTimeseries("WAP67", startUtc, endUtc);
+  const wap67Precip = await fetchDailyPrecipInches("WAP67", startUtc, endUtc);
 
   // Fetch HRPW1 data (Harts Pass SNOTEL)
   const hrpData = await fetchDailyTimeseries("HRPW1", startUtc, endUtc);
@@ -60,7 +64,7 @@ async function run() {
 
   // Prepare WAP55 row data
   const wap55RowData = {
-    station: "Washington Pass (AWOS)",
+    station: "WA Pass Lower (AWOS)",
     temperature: wapData?.temperature,
     highTemp: wapData?.highTemp,
     lowTemp: wapData?.lowTemp,
@@ -68,6 +72,19 @@ async function run() {
     windGust: wapData?.windGust,
     windDirection: wapData?.windDirection,
     precipitationInches: wapPrecip?.inches,
+    sweDeltaInches: undefined,
+  };
+
+  // Prepare WAP67 row data
+  const wap67RowData = {
+    station: "WA Pass Upper (AWOS)",
+    temperature: wap67Data?.temperature,
+    highTemp: wap67Data?.highTemp,
+    lowTemp: wap67Data?.lowTemp,
+    windSpeed: wap67Data?.windSpeed,
+    windGust: wap67Data?.windGust,
+    windDirection: wap67Data?.windDirection,
+    precipitationInches: wap67Precip?.inches,
     sweDeltaInches: undefined,
   };
 
@@ -121,13 +138,25 @@ async function run() {
     wap55RowData,
     wapData ? "" : "Station offline or no data"
   );
+  const wap67Row = weatherDataToRow(
+    dateStr,
+    wap67RowData,
+    wap67Data ? "" : "Station offline or no data"
+  );
   const hrpw1Row = weatherDataToRow(dateStr, hrpw1RowData, "");
   const raiw1Row = weatherDataToRow(dateStr, raiw1RowData, "");
   const swsw1Row = weatherDataToRow(dateStr, swsw1RowData, "");
 
   // Write to Google Sheets
   console.log("\n📊 Writing to Google Sheets...");
-  await writeToSheet([ks52Row, wap55Row, hrpw1Row, raiw1Row, swsw1Row]);
+  await writeToSheet([
+    ks52Row,
+    wap55Row,
+    wap67Row,
+    hrpw1Row,
+    raiw1Row,
+    swsw1Row,
+  ]);
   console.log("\n✅ Done!");
 }
 

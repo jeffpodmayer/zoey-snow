@@ -1,0 +1,188 @@
+import dotenv from "dotenv";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { fetchDailyPrecipInches } from "./services/synopticPrecipService";
+import { fetchSweTimeseries } from "./services/synopticSnowService";
+import { fetchDailyTimeseries } from "./services/synopticTimeseriesService";
+import { weatherDataToRow } from "./utils/formatters";
+import { writeToSheet } from "./utils/googleSheets";
+
+dayjs.extend(utc);
+dotenv.config();
+
+async function backfill() {
+  // Define the date range - October 1st to yesterday
+  const startDate = dayjs.utc("2025-10-01");
+  const endDate = dayjs.utc().subtract(1, "day");
+
+  console.log(
+    `\n📅 Backfilling data from ${startDate.format(
+      "YYYY-MM-DD"
+    )} to ${endDate.format("YYYY-MM-DD")}\n`
+  );
+
+  let currentDate = startDate; // Start from oldest
+
+  // Process from oldest to newest
+  while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, "day")) {
+    const startUtc = currentDate.startOf("day").format("YYYYMMDDHHmm");
+    const endUtc = currentDate.endOf("day").format("YYYYMMDDHHmm");
+    const dateStr = currentDate.format("YYYY-MM-DD");
+
+    console.log(`📊 Processing: ${dateStr}`);
+
+    try {
+      // Fetch KS52 data (Methow Valley AWOS)
+      const metData = await fetchDailyTimeseries("KS52", startUtc, endUtc);
+      const metPrecip = await fetchDailyPrecipInches("KS52", startUtc, endUtc);
+
+      // Fetch WAP55 data (WA Pass Lower AWOS)
+      const wapData = await fetchDailyTimeseries("WAP55", startUtc, endUtc);
+      const wapPrecip = await fetchDailyPrecipInches("WAP55", startUtc, endUtc);
+
+      // Fetch WAP67 data (WA Pass Upper AWOS)
+      const wap67Data = await fetchDailyTimeseries("WAP67", startUtc, endUtc);
+      const wap67Precip = await fetchDailyPrecipInches(
+        "WAP67",
+        startUtc,
+        endUtc
+      );
+
+      // Fetch HRPW1 data (Harts Pass SNOTEL)
+      const hrpData = await fetchDailyTimeseries("HRPW1", startUtc, endUtc);
+      const hrpPrecip = await fetchDailyPrecipInches("HRPW1", startUtc, endUtc);
+      const hrpSwe = await fetchSweTimeseries("HRPW1", startUtc, endUtc);
+
+      // Fetch RAIW1 data (Rainy Pass SNOTEL)
+      const raiData = await fetchDailyTimeseries("RAIW1", startUtc, endUtc);
+      const raiPrecip = await fetchDailyPrecipInches("RAIW1", startUtc, endUtc);
+      const raiSwe = await fetchSweTimeseries("RAIW1", startUtc, endUtc);
+
+      // Fetch SWSW1 data (Swamp Creek SNOTEL)
+      const swsData = await fetchDailyTimeseries("SWSW1", startUtc, endUtc);
+      const swsPrecip = await fetchDailyPrecipInches("SWSW1", startUtc, endUtc);
+      const swsSwe = await fetchSweTimeseries("SWSW1", startUtc, endUtc);
+
+      // Prepare row data
+      const ks52RowData = {
+        station: "Methow Valley (AWOS)",
+        temperature: metData?.temperature,
+        highTemp: metData?.highTemp,
+        lowTemp: metData?.lowTemp,
+        windSpeed: metData?.windSpeed,
+        windGust: metData?.windGust,
+        windDirection: metData?.windDirection,
+        precipitationInches: metPrecip?.inches,
+        sweDeltaInches: undefined,
+      };
+
+      const wap55RowData = {
+        station: "WA Pass Lower (AWOS)",
+        temperature: wapData?.temperature,
+        highTemp: wapData?.highTemp,
+        lowTemp: wapData?.lowTemp,
+        windSpeed: wapData?.windSpeed,
+        windGust: wapData?.windGust,
+        windDirection: wapData?.windDirection,
+        precipitationInches: wapPrecip?.inches,
+        sweDeltaInches: undefined,
+      };
+
+      const wap67RowData = {
+        station: "WA Pass Upper (AWOS)",
+        temperature: wap67Data?.temperature,
+        highTemp: wap67Data?.highTemp,
+        lowTemp: wap67Data?.lowTemp,
+        windSpeed: wap67Data?.windSpeed,
+        windGust: wap67Data?.windGust,
+        windDirection: wap67Data?.windDirection,
+        precipitationInches: wap67Precip?.inches,
+        sweDeltaInches: undefined,
+      };
+
+      const hrpw1RowData = {
+        station: "Harts Pass (SNOTEL)",
+        temperature: hrpData?.temperature,
+        highTemp: hrpData?.highTemp,
+        lowTemp: hrpData?.lowTemp,
+        windSpeed: hrpData?.windSpeed,
+        windGust: hrpData?.windGust,
+        windDirection: hrpData?.windDirection,
+        precipitationInches: hrpPrecip?.inches,
+        sweDeltaInches: hrpSwe?.deltaInches,
+      };
+
+      const raiw1RowData = {
+        station: "Rainy Pass (SNOTEL)",
+        temperature: raiData?.temperature,
+        highTemp: raiData?.highTemp,
+        lowTemp: raiData?.lowTemp,
+        windSpeed: raiData?.windSpeed,
+        windGust: raiData?.windGust,
+        windDirection: raiData?.windDirection,
+        precipitationInches: raiPrecip?.inches,
+        sweDeltaInches: raiSwe?.deltaInches,
+      };
+
+      const swsw1RowData = {
+        station: "Swamp Creek (SNOTEL)",
+        temperature: swsData?.temperature,
+        highTemp: swsData?.highTemp,
+        lowTemp: swsData?.lowTemp,
+        windSpeed: swsData?.windSpeed,
+        windGust: swsData?.windGust,
+        windDirection: swsData?.windDirection,
+        precipitationInches: swsPrecip?.inches,
+        sweDeltaInches: swsSwe?.deltaInches,
+      };
+
+      // Convert to spreadsheet rows
+
+      const wap67Row = weatherDataToRow(
+        dateStr,
+        wap67RowData,
+        wap67Data ? "" : "Station offline or no data"
+      );
+      const ks52Row = weatherDataToRow(
+        dateStr,
+        ks52RowData,
+        metData ? "" : "Station offline or no data"
+      );
+      const wap55Row = weatherDataToRow(
+        dateStr,
+        wap55RowData,
+        wapData ? "" : "Station offline or no data"
+      );
+      const hrpw1Row = weatherDataToRow(dateStr, hrpw1RowData, "");
+      const raiw1Row = weatherDataToRow(dateStr, raiw1RowData, "");
+      const swsw1Row = weatherDataToRow(dateStr, swsw1RowData, "");
+
+      // Append this day's rows to the sheet
+      await writeToSheet([
+        ks52Row,
+        wap55Row,
+        wap67Row,
+        hrpw1Row,
+        raiw1Row,
+        swsw1Row,
+      ]);
+      console.log(`✅ Completed ${dateStr}`);
+
+      // Small delay to be nice to the API (1 second)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`❌ Error processing ${dateStr}:`, error);
+      // Continue with next day even if this one fails
+    }
+
+    // Move to next day
+    currentDate = currentDate.add(1, "day");
+  }
+
+  console.log("\n✅ Backfill complete!");
+}
+
+backfill().catch((error) => {
+  console.error("❌ Fatal error:", error);
+  process.exit(1);
+});
