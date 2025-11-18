@@ -89,7 +89,7 @@ export async function appendRows(
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: "A:K", // Append to columns A-K
-    valueInputOption: "RAW",
+    valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
       values: rows,

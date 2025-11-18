@@ -18,7 +18,7 @@ async function run() {
   const targetDay = dayjs.utc().subtract(1, "day");
   const startUtc = targetDay.startOf("day").format("YYYYMMDDHHmm");
   const endUtc = targetDay.endOf("day").format("YYYYMMDDHHmm");
-  const dateStr = targetDay.format("YYYY-MM-DD");
+  const dateStr = targetDay.format("MM/DD/YYYY");
 
   console.log(`\n📅 Fetching data for: ${dateStr} (UTC)\n`);
 

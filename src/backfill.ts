@@ -13,7 +13,7 @@ dotenv.config();
 async function backfill() {
   // Define the date range - October 1st to yesterday
   const startDate = dayjs.utc("2025-10-01");
-  const endDate = dayjs.utc().subtract(1, "day");
+  const endDate = dayjs.utc().startOf("day").subtract(1, "day"); // Explicitly get start of yesterday
 
   console.log(
     `\n📅 Backfilling data from ${startDate.format(
@@ -27,7 +27,7 @@ async function backfill() {
   while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, "day")) {
     const startUtc = currentDate.startOf("day").format("YYYYMMDDHHmm");
     const endUtc = currentDate.endOf("day").format("YYYYMMDDHHmm");
-    const dateStr = currentDate.format("YYYY-MM-DD");
+    const dateStr = currentDate.format("MM/DD/YYYY");
 
     console.log(`📊 Processing: ${dateStr}`);
 
